@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ include "ddf.fullname" . }}-config-directory
+  labels:
+    {{- include "ddf.labels" . | nindent 4 }}
+data:
+  org.apache.felix.fileinstall-config.cfg: |
+    felix.fileinstall.poll = 1000
+    felix.fileinstall.log.level = 3
+    felix.fileinstall.active.level = 80
+    felix.fileinstall.dir = /config
+    felix.fileinstall.start.level = 80
+    felix.fileinstall.tmpdir = /app/data/generated-bundles
