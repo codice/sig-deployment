@@ -98,7 +98,7 @@ Create the volume mount for any trusted certificates
 Generate environment variables for injecting tls certs.
 */}}
 {{- define "ddf.env.tls" -}}
-{{- if and .secret.name .ca.name }}
+{{- if and .secret.name .secret.name }}
 - name: SSL_CERT
   valueFrom:
     secretKeyRef: 
@@ -111,9 +111,12 @@ Generate environment variables for injecting tls certs.
       key: {{ .secret.keyKey }}
 - name: SSL_CA_BUNDLE
   valueFrom:
-    configMapKeyRef: 
-      name: {{ .ca.name }}
-      key: {{ .ca.caKey }}
+   # configMapKeyRef: 
+   #   name: {{ .ca.name }}
+   #   key: {{ .ca.caKey }}
+     secretKeyRef:
+      name: {{ .secret.name }}
+      key: {{ .secret.caKey }}
 {{ end -}}
 {{- end -}}
 
@@ -128,6 +131,26 @@ Generate environment variable for security profile
 {{- end -}}
 
 {{/*
+Generate environment variable for internal hostname
+*/}}
+{{- define "ddf.env.internalHostname" -}}
+{{- if .internalHostname }}
+- name: INTERNAL_HOSTNAME
+  value: {{ .internalHostname }}
+{{ end -}}
+{{- end -}}
+
+{{/*
+Generate environment variable for external hostname
+*/}}
+{{- define "ddf.env.externalHostname" -}}
+{{- if .hostname }}
+- name: EXTERNAL_HOSTNAME
+  value: {{ .hostname }}
+{{ end -}}
+{{- end -}}
+
+{{/*
 Generate the environment variable for the install profile
 */}}
 {{- define "ddf.env.installProfile" -}}
@@ -138,15 +161,6 @@ Generate the environment variable for the install profile
 {{- end -}}
 
 {{/*
-Generate environment variables for hostname settings
-*/}}
-{{- define "ddf.env.hostname" -}}
-{{- if .hostname }}
-- name: EXTERNAL_HOSTNAME
-  value: {{ .Values.hostname }}
-  value: {{ .Values.hostname }}
-{{- end }}
-{{- end -}}
 
 {{/*
 Generate environment variables for port settings

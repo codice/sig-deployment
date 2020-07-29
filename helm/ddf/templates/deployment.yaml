@@ -44,35 +44,54 @@ spec:
             - name: https
               containerPort: 8993
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          #livenessProbe:
+          #  httpGet:
+          #    path: /
+          #    scheme: HTTPS
+          #    port: https
+          #readinessProbe:
+          #  httpGet:
+          #    path: /
+          #    scheme: HTTPS
+          #    port: https
           env:
             {{- include "ddf.env.tls" .Values.tls | nindent 16 }}
             {{- include "ddf.env.securityProfile" .Values | nindent 16 }}
             {{- include "ddf.env.installProfile" .Values | nindent 16 }}
-            {{- include "ddf.env.hostname" .Values | nindent 16 }}
             {{- include "ddf.env.ports" .Values | nindent 16 }}
             {{- include "ddf.env.memory" .Values | nindent 16 }}
             {{- include "ddf.env.ssh" .Values | nindent 16 }}
             {{- include "ddf.env.securityManager" .Values | nindent 16 }}
             {{- include "ddf.env.memory" .Values | nindent 16 }}
             {{- include "ddf.env.siteName" .Values | nindent 16 }}
+            {{- include "ddf.env.externalHostname" .Values | nindent 16 }}
+            {{- include "ddf.env.internalHostname" .Values | nindent 16 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: config-directory
+            - name: sources-config-directory
               mountPath: /app/etc/org.apache.felix.fileinstall-config.cfg
               subPath: org.apache.felix.fileinstall-config.cfg
+            {{- with .Values.keystoresPath }}
+            - name: keystore-volume
+              mountPath: /app/etc/keystores/serverKeystore.jks
+            - name: truststore-volume
+              mountPath: /app/etc/keystores/serverTruststore.jks
+            {{- end }}
       volumes:
         - name: sources-config-directory
           configMap:
             name: {{ $fullname }}-config-directory
+        {{- with .Values.keystoresPath }}
+        - name: keystore-volume
+          hostPath:
+           # directory location on host
+           path: {{ .Values.keystoresPath }}keystores/serverKeystore.jks
+        - name: truststore-volume
+          hostPath:
+           # directory location on host
+           path: {{ .Values.keystoresPath }}keystores/serverTruststore.jks
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -5,25 +5,30 @@
 replicaCount: 1
 
 image:
-  registry: docker.io
+  registry: docker.local:5000
   repository: codice/ddf
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
-hostname: ""
-installProfile: ""
+hostname: "ddf"
+internalHostname: "ddf"
+installProfile: "development"
 securityProfile:
   name: ""
+# Path to keystores located on host machine
+keystoresPath: ""
+# Path to configs located on host machine
+configsPath: ""
 
 tls:
   secret:
     # name of secret to use for injecting cert/key into ddf instance
     # set the correct keys to match contents of the tls secret. defaults match what k8s uses by default
-    # name: ""
+    name: "keystore-secret"
     certKey: tls.crt
     keyKey: tls.key
-
+    caKey: ca.crt
   # ca is used to configure a configMap that contains the ca belongint to the tls key being used by the ddf instance
   ca:
     # change the name to the correct configMap when using injected certificates
