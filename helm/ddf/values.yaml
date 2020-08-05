@@ -8,7 +8,7 @@ image:
   registry: docker.local:5000
   repository: codice/ddf
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
+ # Overrides the image tag whose default is the chart appVersion.
   tag: ""
 
 hostname: "ddf"
@@ -16,28 +16,26 @@ internalHostname: "ddf"
 installProfile: "development"
 securityProfile:
   name: ""
-# Path to keystores located on host machine
-keystoresPath: ""
-# Path to configs located on host machine
-configsPath: ""
 
+#------------------------------------
+# Use either tls/secret to inject cert/key or keystores/secret to inject the jks files into the DDF instance
 tls:
   secret:
-    # name of secret to use for injecting cert/key into ddf instance
+    # The name of secret to use for injecting cert/key into ddf instance
     # set the correct keys to match contents of the tls secret. defaults match what k8s uses by default
-    name: "keystore-secret"
+    # name: "tls-secret"
     certKey: tls.crt
     keyKey: tls.key
     caKey: ca.crt
-  # ca is used to configure a configMap that contains the ca belongint to the tls key being used by the ddf instance
-  ca:
-    # change the name to the correct configMap when using injected certificates
-    # change the name of the key containing the ca if necessary
-    # name: ""
-    caKey: tls.ca-bundle
-  # ConfigMap name containing all private/custom CA certificates that need to be added to the truststore
-#  trustedCAs: ""
-  
+  #trustedCertsSecretName: "trusted-certs-secret"
+
+keystores:
+  secret:
+    # The name of the secret to use for injecting the server keystore and truststore jks files into DDF
+    name: "keystores-secret"
+    keystoreKey: serverKeystore.jks
+    truststoreKey: serverTruststore.jks
+#-------------------------------------
 
 imagePullSecrets: []
 nameOverride: ""

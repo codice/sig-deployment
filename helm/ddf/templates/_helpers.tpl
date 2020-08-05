@@ -71,26 +71,50 @@ hostAliases:
   - ip: '127.0.0.1'
     hostnames:
       - {{ .hostname }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the volume configuration for any trusted certificates
+*/}}
+{{- define "ddf.trustedCertsVol" -}}
+{{- if .tls.trustedCertsSecretName }}
+- name: trusted-certs-vol
+  secret:
+    secretName: {{ .tls.trustedCertsSecretName }}
+    defaultMode: 0644
+{{- end }}
+{{- end }}
+
+{{/*
+Create the volume mount for any trusted certificates
+*/}}
+{{- define "ddf.trustedCertsMount" -}}
+{{- if .tls.trustedCertsSecretName }}
+- name: trusted-certs-vol
+  mountPath: /trusted_certs
 {{- end -}}
 {{- end -}}
 
 {{/*
 Create the volume configuration for any trusted certificates
 */}}
-{{- define "ddf.trustedCertsVol" -}}
-- name: trusted-certs-vol
-  configMap:
-      name: {{ .Values.trustedCertsConfigName }}
-      defaultMode: 0644
-{{- end -}}
+{{- define "ddf.keystoresVol" -}}
+{{- if .keystores.secret.name }}
+- name: keystores-vol
+  secret:
+    secretName: {{ .keystores.secret.name }}
+    defaultMode: 0644
+{{- end }}
+{{- end }}
 
 {{/*
 Create the volume mount for any trusted certificates
 */}}
-{{- define "ddf.trustedCertsMount" -}}
-{{- if hasKey $.Values "trustedCertsConfigName" -}}
-- name: trusted-certs-vol
-  mountPath: /trusted_certs
+{{- define "ddf.keystoresMount" -}}
+{{- if .keystores.secret.name }}
+- name: keystores-vol
+  mountPath: /keystores
 {{- end -}}
 {{- end -}}
 
@@ -98,7 +122,7 @@ Create the volume mount for any trusted certificates
 Generate environment variables for injecting tls certs.
 */}}
 {{- define "ddf.env.tls" -}}
-{{- if and .secret.name .secret.name }}
+{{- if .secret.name }}
 - name: SSL_CERT
   valueFrom:
     secretKeyRef: 
@@ -111,10 +135,7 @@ Generate environment variables for injecting tls certs.
       key: {{ .secret.keyKey }}
 - name: SSL_CA_BUNDLE
   valueFrom:
-   # configMapKeyRef: 
-   #   name: {{ .ca.name }}
-   #   key: {{ .ca.caKey }}
-     secretKeyRef:
+    secretKeyRef:
       name: {{ .secret.name }}
       key: {{ .secret.caKey }}
 {{ end -}}
@@ -124,7 +145,7 @@ Generate environment variables for injecting tls certs.
 Generate environment variable for security profile
 */}}
 {{- define "ddf.env.securityProfile" -}}
-{{- if .securityProfile }}
+{{- if .securityProfile.name }}
 - name: SECURITY_PROFILE
   value: {{ .securityProfile.name }}
 {{ end -}}
@@ -167,9 +188,9 @@ Generate environment variables for port settings
 */}}
 {{- define "ddf.env.ports" -}}
 - name: EXTERNAL_HTTPS_PORT
-  value: '443'
+  value: '8993'
 - name: EXTERNAL_HTTP_PORT
-  value: '80'
+  value: '8080'
 {{- end -}}
 
 {{/*

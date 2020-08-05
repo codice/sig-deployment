@@ -1,0 +1,17 @@
+{{- if .Values.tls.secret.name -}}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.tls.secret.name }}
+  labels:
+    {{- include "ddf.labels" . | nindent 4 }}
+type: Opaque
+data:
+  "{{ .Values.tls.secret.keyKey }}": |-
+    {{ .Files.Get "tls/keystore/tls.key" | b64enc }}
+  "{{ .Values.tls.secret.certKey }}": |-
+    {{ .Files.Get "tls/keystore/tls.crt" | b64enc }}
+  # Use secret for storing root ca beloging to private key
+  "{{ .Values.tls.secret.caKey }}": |-
+    {{ .Files.Get "tls/keystorie/ca.crt" | b64enc}}
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if .Values.tls.trustedCertsSecretName -}}
+kind: Secret
+apiVersion: v1
+metadata:
+  name: {{ .Values.tls.trustedCertsSecretName }}
+  labels:
+    {{- include "ddf.labels" . | nindent 4 }}
+type: Opaque
+data:
+  {{- $files := .Files }}
+  {{- range $key, $value := .Files }}
+  {{- if hasPrefix "tls/truststore-certs/" $key }}
+  {{ $key | nospace | trimPrefix "tls/truststore-certs/" | quote }}: {{ $files.Get $key | b64enc }} {{/* adapt $key as desired */}}
+  {{- end }}
+  {{- end }}
+{{- end }}

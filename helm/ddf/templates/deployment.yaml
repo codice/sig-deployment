@@ -55,43 +55,41 @@ spec:
           #    scheme: HTTPS
           #    port: https
           env:
-            {{- include "ddf.env.tls" .Values.tls | nindent 16 }}
-            {{- include "ddf.env.securityProfile" .Values | nindent 16 }}
-            {{- include "ddf.env.installProfile" .Values | nindent 16 }}
-            {{- include "ddf.env.ports" .Values | nindent 16 }}
-            {{- include "ddf.env.memory" .Values | nindent 16 }}
-            {{- include "ddf.env.ssh" .Values | nindent 16 }}
-            {{- include "ddf.env.securityManager" .Values | nindent 16 }}
-            {{- include "ddf.env.memory" .Values | nindent 16 }}
-            {{- include "ddf.env.siteName" .Values | nindent 16 }}
-            {{- include "ddf.env.externalHostname" .Values | nindent 16 }}
-            {{- include "ddf.env.internalHostname" .Values | nindent 16 }}
+            {{- include "ddf.env.tls" .Values.tls | nindent 12 }}
+            {{- include "ddf.env.securityProfile" .Values | nindent 12 }}
+            {{- include "ddf.env.installProfile" .Values | nindent 12 }}
+            {{- include "ddf.env.ports" .Values | nindent 12 }}
+            {{- include "ddf.env.memory" .Values | nindent 12 }}
+            {{- include "ddf.env.ssh" .Values | nindent 12 }}
+            {{- include "ddf.env.securityManager" .Values | nindent 12 }}
+            {{- include "ddf.env.memory" .Values | nindent 12 }}
+            {{- include "ddf.env.siteName" .Values | nindent 12 }}
+            {{- include "ddf.env.externalHostname" .Values | nindent 12 }}
+            {{- include "ddf.env.internalHostname" .Values | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            {{- include "ddf.trustedCertsMount" .Values | nindent 12 }}
             - name: sources-config-directory
               mountPath: /app/etc/org.apache.felix.fileinstall-config.cfg
               subPath: org.apache.felix.fileinstall-config.cfg
-            {{- with .Values.keystoresPath }}
-            - name: keystore-volume
-              mountPath: /app/etc/keystores/serverKeystore.jks
-            - name: truststore-volume
-              mountPath: /app/etc/keystores/serverTruststore.jks
-            {{- end }}
+           {{- include "ddf.keystoresMount" .Values | nindent 12 }}
+          {{- with .Values.keystores.secret.name }}
+          lifecycle:
+            postStart:
+             exec:
+               command:
+                 - /bin/sh
+                 - -c
+                 - cp /keystores/serverKeystore.jks /app/etc/keystores/serverKeystore.jks
+                 - cp /keystores/serverTruststore.jks /app/etc/keystores/serverTruststore.jks
+          {{- end }}
       volumes:
+        {{- include "ddf.trustedCertsVol" .Values | nindent 8 }}
         - name: sources-config-directory
           configMap:
             name: {{ $fullname }}-config-directory
-        {{- with .Values.keystoresPath }}
-        - name: keystore-volume
-          hostPath:
-           # directory location on host
-           path: {{ .Values.keystoresPath }}keystores/serverKeystore.jks
-        - name: truststore-volume
-          hostPath:
-           # directory location on host
-           path: {{ .Values.keystoresPath }}keystores/serverTruststore.jks
-        {{- end }}
+        {{- include "ddf.keystoresVol" .Values | nindent 8 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
