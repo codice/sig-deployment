@@ -1,0 +1,87 @@
+{{- $fullname := include "ddf.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- include "ddf.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "ddf.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "ddf.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- include "ddf.spec.hostAlias" .Values | nindent 6 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ddf.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          stdin: true
+          tty: true
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8181
+              protocol: TCP
+            - name: https
+              containerPort: 8993
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          env:
+            {{- include "ddf.env.tls" .Values.tls | nindent 16 }}
+            {{- include "ddf.env.securityProfile" .Values | nindent 16 }}
+            {{- include "ddf.env.installProfile" .Values | nindent 16 }}
+            {{- include "ddf.env.hostname" .Values | nindent 16 }}
+            {{- include "ddf.env.ports" .Values | nindent 16 }}
+            {{- include "ddf.env.memory" .Values | nindent 16 }}
+            {{- include "ddf.env.ssh" .Values | nindent 16 }}
+            {{- include "ddf.env.securityManager" .Values | nindent 16 }}
+            {{- include "ddf.env.memory" .Values | nindent 16 }}
+            {{- include "ddf.env.siteName" .Values | nindent 16 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config-directory
+              mountPath: /app/etc/org.apache.felix.fileinstall-config.cfg
+              subPath: org.apache.felix.fileinstall-config.cfg
+      volumes:
+        - name: sources-config-directory
+          configMap:
+            name: {{ $fullname }}-config-directory
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
